@@ -10,7 +10,25 @@ type ChatMessage = {
 };
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "assistant",
+      content: `# 👋 Welcome to StudyMate AI!
+
+**Your personal AI tutor for learning, coding, and exam preparation.**
+
+### I can help you with:
+- 📚 Explain difficult topics
+- 💻 Programming & debugging
+- 📝 Summarize notes
+- ❓ Solve questions
+- 📖 Prepare for exams
+- 🎯 Give quick or detailed explanations
+
+**Ask me anything to get started! 🚀**`,
+    },
+  ]);
+
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +40,6 @@ export default function ChatPage() {
       content: message,
     };
 
-    // Create the updated conversation
     const updatedMessages = [...messages, userMessage];
 
     // Show the user's message immediately
@@ -41,6 +58,10 @@ export default function ChatPage() {
         }),
       });
 
+      if (!res.ok) {
+        throw new Error("Failed to get response");
+      }
+
       const data = await res.json();
 
       setMessages((prev) => [
@@ -50,14 +71,15 @@ export default function ChatPage() {
           content: data.reply,
         },
       ]);
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "❌ Something went wrong.",
+          content:
+            "❌ Sorry, something went wrong. Please try again.",
         },
       ]);
     } finally {
@@ -67,7 +89,10 @@ export default function ChatPage() {
 
   return (
     <main className="flex h-screen flex-col bg-black text-white">
-      <ChatWindow messages={messages} />
+      <ChatWindow
+        messages={messages}
+        loading={loading}
+      />
 
       <ChatInput
         value={message}

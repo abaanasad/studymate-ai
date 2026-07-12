@@ -5,40 +5,43 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
 });
 
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json();
 
-    const conversation = messages
+    const conversation = (messages as ChatMessage[])
       .map(
-        (msg: { role: string; content: string }) =>
+        (msg) =>
           `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
       )
       .join("\n\n");
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: `
+    const prompt = `
 You are StudyMate AI.
 
-You are a friendly AI tutor.
-
-Always answer in clean Markdown.
-
 Rules:
-- Use headings.
-- Use bullet points.
-- Use **bold** text for important terms.
-- Keep paragraphs short.
-- Explain difficult concepts in simple language.
-- Give examples whenever possible.
-- Remember the previous conversation and answer follow-up questions based on it.
+- Never introduce yourself unless the user asks who you are.
+- Assume the welcome message has already been shown.
+- Remember previous messages.
+- Keep answers short by default.
+- Give detailed answers only when asked.
+- Use Markdown.
 
 Conversation:
+
 ${conversation}
 
 Assistant:
-`,
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
     });
 
     return NextResponse.json({
@@ -49,7 +52,7 @@ Assistant:
 
     return NextResponse.json(
       {
-        reply: "Something went wrong. Please try again.",
+        reply: "❌ Something went wrong. Please try again.",
       },
       {
         status: 500,
