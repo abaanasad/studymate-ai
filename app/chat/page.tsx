@@ -22,9 +22,11 @@ export default function ChatPage() {
       content: message,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // Create the updated conversation
+    const updatedMessages = [...messages, userMessage];
 
-    const currentMessage = message;
+    // Show the user's message immediately
+    setMessages(updatedMessages);
     setMessage("");
     setLoading(true);
 
@@ -35,7 +37,7 @@ export default function ChatPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: currentMessage,
+          messages: updatedMessages,
         }),
       });
 
@@ -48,17 +50,19 @@ export default function ChatPage() {
           content: data.reply,
         },
       ]);
-    } catch {
+    } catch (err) {
+      console.error(err);
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "❌ Something went wrong. Please try again.",
+          content: "❌ Something went wrong.",
         },
       ]);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (

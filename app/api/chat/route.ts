@@ -7,7 +7,14 @@ const ai = new GoogleGenAI({
 
 export async function POST(req: NextRequest) {
   try {
-    const { message } = await req.json();
+    const { messages } = await req.json();
+
+    const conversation = messages
+      .map(
+        (msg: { role: string; content: string }) =>
+          `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
+      )
+      .join("\n\n");
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
@@ -25,9 +32,12 @@ Rules:
 - Keep paragraphs short.
 - Explain difficult concepts in simple language.
 - Give examples whenever possible.
+- Remember the previous conversation and answer follow-up questions based on it.
 
-Question:
-${message}
+Conversation:
+${conversation}
+
+Assistant:
 `,
     });
 
