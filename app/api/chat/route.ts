@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -25,12 +25,12 @@ export async function POST(req: NextRequest) {
 You are StudyMate AI.
 
 Rules:
-- Never introduce yourself unless the user asks who you are.
+- Never introduce yourself unless the user asks.
 - Assume the welcome message has already been shown.
 - Remember previous messages.
-- Keep answers short by default.
-- Give detailed answers only when asked.
-- Use Markdown.
+- Answer directly.
+- Keep answers short unless the user asks for more detail.
+- Use Markdown when helpful.
 
 Conversation:
 
@@ -39,24 +39,59 @@ ${conversation}
 Assistant:
 `;
 
-    const response = await ai.models.generateContent({
+    const stream = await ai.models.generateContentStream({
       model: "gemini-3-flash-preview",
       contents: prompt,
     });
 
-    return NextResponse.json({
-      reply: response.text,
-    });
-  } catch (error) {
-    console.error(error);
+    const encoder = new TextEncoder();
 
-    return NextResponse.json(
+    return new Response(
+      new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of stream) {
+              const text = chunk.text ?? "";
+
+              console.log("Chunk:", text);
+
+              controller.enqueue(encoder.encode(text));
+            }
+
+            controller.close();
+          } catch (err) {
+            controller.error(err);
+          }
+        },
+      }),
       {
-        reply: "❌ Something went wrong. Please try again.",
-      },
-      {
-        status: 500,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-cache",
+        },
       }
     );
+  } catch (error: any) {
+    console.error("========== GEMINI ERROR ==========");
+    console.error(error);
+    console.error("=================================");
+
+    let message = "❌ Something went wrong.";
+
+    if (error?.status === 429) {
+      message =
+        "⚠️ StudyMate AI has reached the Gemini API limit. Please wait a few minutes and try again.";
+    } else if (error?.status === 401) {
+      message = "❌ Invalid Gemini API key.";
+    } else if (error?.status === 403) {
+      message = "❌ Gemini API access denied.";
+    }
+
+    return new Response(message, {
+      status: error?.status || 500,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
   }
 }

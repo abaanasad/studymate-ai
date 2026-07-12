@@ -42,7 +42,6 @@ export default function ChatPage() {
 
     const updatedMessages = [...messages, userMessage];
 
-    // Show the user's message immediately
     setMessages(updatedMessages);
     setMessage("");
     setLoading(true);
@@ -58,32 +57,64 @@ export default function ChatPage() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to get response");
+      if (!res.body) {
+        throw new Error("No response body");
       }
 
-      const data = await res.json();
-
+      // Create an empty assistant message
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.reply,
+          content: "",
         },
       ]);
+
+      // Hide the "Thinking..." bubble once streaming begins
+      setLoading(false);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      let fullText = "";
+      let displayedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        fullText += decoder.decode(value, { stream: true });
+
+        while (displayedText.length < fullText.length) {
+          displayedText += fullText[displayedText.length];
+
+          setMessages((prev) => {
+            const copy = [...prev];
+            copy[copy.length - 1] = {
+              role: "assistant",
+              content: displayedText,
+            };
+            return copy;
+          });
+
+          await new Promise((resolve) =>
+            setTimeout(resolve, 10)
+          );
+        }
+      }
     } catch (error) {
       console.error(error);
 
+      setLoading(false);
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content:
-            "❌ Sorry, something went wrong. Please try again.",
+          content: "❌ Sorry, something went wrong.",
         },
       ]);
-    } finally {
-      setLoading(false);
     }
   }
 

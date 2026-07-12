@@ -1,3 +1,5 @@
+"use client";
+
 import ReactMarkdown from "react-markdown";
 
 type MessageProps = {
@@ -10,25 +12,31 @@ export default function Message({ role, content }: MessageProps) {
 
   return (
     <div
-      className={`flex mb-4 ${
+      className={`mb-5 flex ${
         isUser ? "justify-end" : "justify-start"
       }`}
     >
       <div
-        className={`max-w-[80%] rounded-2xl px-5 py-3 shadow-lg ${
+        className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-lg transition-all duration-150 ${
           isUser
             ? "bg-blue-600 text-white"
             : "bg-zinc-800 text-white"
         }`}
       >
         {!isUser && (
-          <p className="text-xs text-zinc-400 mb-2 font-semibold">
+          <p className="mb-2 text-xs font-semibold text-zinc-400">
             🤖 StudyMate AI
           </p>
         )}
 
-        <div className="prose prose-invert max-w-none">
+        <div className="prose prose-invert max-w-none break-words">
           <ReactMarkdown>{content}</ReactMarkdown>
+
+          {!isUser && (
+            <span className="ml-1 inline-block animate-pulse text-zinc-400">
+              ▋
+            </span>
+          )}
         </div>
       </div>
     </div>
