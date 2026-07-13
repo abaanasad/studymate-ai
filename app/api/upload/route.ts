@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import pdfParse from "pdf-parse";
-import { setUploadedPdfText } from "@/lib/pdfStore";
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,18 +26,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const data = await pdfParse(buffer);
-
-    setUploadedPdfText(data.text);
-
     return NextResponse.json({
       success: true,
       fileName: file.name,
-      pages: data.numpages,
-      characters: data.text.length,
+      fileSize: file.size,
+      fileType: file.type,
+      message: "PDF uploaded successfully.",
     });
   } catch (error) {
     console.error(error);
@@ -47,11 +39,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to read PDF.",
+        message: "Upload failed.",
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }

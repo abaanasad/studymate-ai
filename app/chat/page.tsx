@@ -1,36 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import Sidebar from "../components/Sidebar/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import ChatInput from "../components/ChatInput";
 
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
+import { ChatMessage } from "./types";
+import { welcomeMessage } from "./constants";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content: `# 👋 Welcome to StudyMate AI!
-
-**Your personal AI tutor for learning, coding, and exam preparation.**
-
-### I can help you with:
-- 📚 Explain difficult topics
-- 💻 Programming & debugging
-- 📝 Summarize notes
-- ❓ Solve questions
-- 📖 Prepare for exams
-- 🎯 Give quick or detailed explanations
-
-**Ask me anything to get started! 🚀**`,
-    },
+    welcomeMessage,
   ]);
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function handleNewChat() {
+    setMessages([welcomeMessage]);
+    setMessage("");
+    setLoading(false);
+  }
 
   async function sendMessage() {
     if (!message.trim() || loading) return;
@@ -61,7 +51,6 @@ export default function ChatPage() {
         throw new Error("No response body");
       }
 
-      // Add empty assistant message
       setMessages((prev) => [
         ...prev,
         {
@@ -70,7 +59,6 @@ export default function ChatPage() {
         },
       ]);
 
-      // Hide thinking bubble
       setLoading(false);
 
       const reader = res.body.getReader();
@@ -121,18 +109,22 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="flex h-screen flex-col bg-black text-white">
-      <ChatWindow
-        messages={messages}
-        loading={loading}
-      />
+    <main className="flex h-screen bg-black text-white">
+      <Sidebar onNewChat={handleNewChat} />
 
-      <ChatInput
-        value={message}
-        onChange={setMessage}
-        onSend={sendMessage}
-        loading={loading}
-      />
+      <div className="flex flex-1 flex-col">
+        <ChatWindow
+          messages={messages}
+          loading={loading}
+        />
+
+        <ChatInput
+          value={message}
+          onChange={setMessage}
+          onSend={sendMessage}
+          loading={loading}
+        />
+      </div>
     </main>
   );
 }
