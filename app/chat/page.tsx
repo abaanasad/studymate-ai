@@ -61,7 +61,7 @@ export default function ChatPage() {
         throw new Error("No response body");
       }
 
-      // Create an empty assistant message
+      // Add empty assistant message
       setMessages((prev) => [
         ...prev,
         {
@@ -70,7 +70,7 @@ export default function ChatPage() {
         },
       ]);
 
-      // Hide the "Thinking..." bubble once streaming begins
+      // Hide thinking bubble
       setLoading(false);
 
       const reader = res.body.getReader();
@@ -91,10 +91,12 @@ export default function ChatPage() {
 
           setMessages((prev) => {
             const copy = [...prev];
+
             copy[copy.length - 1] = {
               role: "assistant",
               content: displayedText,
             };
+
             return copy;
           });
 
