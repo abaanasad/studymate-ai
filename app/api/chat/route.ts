@@ -39,11 +39,14 @@ ${conversation}
 Assistant:
 `;
 
-    const stream = await ai.models.generateContentStream({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-    });
+   console.time("Gemini Response");
 
+const stream = await ai.models.generateContentStream({
+  model: "gemini-3-flash-preview",
+  contents: prompt,
+});
+
+console.timeEnd("Gemini Response");
     const encoder = new TextEncoder();
 
     return new Response(
@@ -51,12 +54,16 @@ Assistant:
         async start(controller) {
           try {
             for await (const chunk of stream) {
-              const text = chunk.text ?? "";
+             const text = chunk.text ?? "";
 
-              console.log("Chunk:", text);
+             console.log("Chunk:", text);
 
-              controller.enqueue(encoder.encode(text));
+             if (text) {
+               controller.enqueue(encoder.encode(text));
+             }
             }
+
+          console.log("Stream finished");
 
             controller.close();
           } catch (err) {
@@ -74,6 +81,9 @@ Assistant:
   } catch (error: any) {
     console.error("========== GEMINI ERROR ==========");
     console.error(error);
+    console.error("Status:", error?.status);
+    console.error("Message:", error?.message);
+    console.error("Details:", error);
     console.error("=================================");
 
     let message = "❌ Something went wrong.";

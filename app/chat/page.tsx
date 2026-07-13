@@ -1,26 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import ChatInput from "../components/ChatInput";
 
-import { ChatMessage } from "./types";
+import { Chat, ChatMessage } from "./types";
 import { welcomeMessage } from "./constants";
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    welcomeMessage,
-  ]);
+ const [messages, setMessages] = useState<ChatMessage[]>([
+  welcomeMessage,
+]);
+
+const [chats, setChats] = useState<Chat[]>([
+  {
+    id: "current",
+    title: "Current Chat",
+    messages: [welcomeMessage],
+  },
+]);
+
+const [currentChatId, setCurrentChatId] = useState("current");
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+  const savedChats = localStorage.getItem("studymate-chats");
+
+  if (savedChats) {
+    try {
+      const parsedChats: Chat[] = JSON.parse(savedChats);
+
+      setChats(parsedChats);
+
+      if (parsedChats.length > 0) {
+        setCurrentChatId(parsedChats[0].id);
+      }
+    } catch (error) {
+      console.error("Failed to load chats:", error);
+    }
+  }
+  setLoaded(true);
+}, []);
+  useEffect(() => {
+  if (!loaded) return;
+
+  localStorage.setItem(
+    "studymate-chats",
+    JSON.stringify(chats)
+  );
+}, [chats, loaded]);
 
   function handleNewChat() {
-    setMessages([welcomeMessage]);
-    setMessage("");
-    setLoading(false);
-  }
+  const newId = `chat-${Date.now()}`;
+
+  const chatNumber = chats.length + 1;
+
+  setChats((prev) => [
+    ...prev,
+    {
+      id: newId,
+      title: `New Chat ${chatNumber}`,
+      messages: [],
+    },
+  ]);
+
+  setCurrentChatId(newId);
+  setMessage("");
+  setLoading(false);
+}
 
   async function sendMessage() {
     if (!message.trim() || loading) return;
@@ -30,13 +80,32 @@ export default function ChatPage() {
       content: message,
     };
 
-    const updatedMessages = [...messages, userMessage];
+    const currentChat = chats.find(
+     (chat) => chat.id === currentChatId
+    );
 
-    setMessages(updatedMessages);
+    if (!currentChat) return;
+
+    const updatedMessages = [
+     ...currentChat.messages,
+     userMessage,
+    ];
+
+    setChats((prev) =>
+     prev.map((chat) =>
+       chat.id === currentChatId
+         ? {
+           ...chat,
+           messages: updatedMessages,
+           }
+         : chat
+        )
+       );
     setMessage("");
     setLoading(true);
 
     try {
+      console.log("Sending request...");
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -46,18 +115,28 @@ export default function ChatPage() {
           messages: updatedMessages,
         }),
       });
+      console.log("Response status:", res.status);
 
       if (!res.body) {
         throw new Error("No response body");
       }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-        },
-      ]);
+      setChats((prev) =>
+  prev.map((chat) =>
+    chat.id === currentChatId
+      ? {
+          ...chat,
+          messages: [
+            ...chat.messages,
+            {
+              role: "assistant",
+              content: "",
+            },
+          ],
+        }
+      : chat
+  )
+);
 
       setLoading(false);
 
@@ -77,46 +156,70 @@ export default function ChatPage() {
         while (displayedText.length < fullText.length) {
           displayedText += fullText[displayedText.length];
 
-          setMessages((prev) => {
-            const copy = [...prev];
+          setChats((prev) =>
+  prev.map((chat) => {
+    if (chat.id !== currentChatId) return chat;
 
-            copy[copy.length - 1] = {
-              role: "assistant",
-              content: displayedText,
-            };
+    const updated = [...chat.messages];
 
-            return copy;
-          });
+    updated[updated.length - 1] = {
+      role: "assistant",
+      content: displayedText,
+    };
 
-          await new Promise((resolve) =>
-            setTimeout(resolve, 10)
-          );
+    return {
+      ...chat,
+      messages: updated,
+    };
+  })
+);
+
+await new Promise((resolve) =>
+  setTimeout(resolve, 1)
+);
         }
       }
     } catch (error) {
-      console.error(error);
+  console.error(error);
 
-      setLoading(false);
+  setLoading(false);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "❌ Sorry, something went wrong.",
-        },
-      ]);
-    }
+  setChats((prev) =>
+    prev.map((chat) =>
+      chat.id === currentChatId
+        ? {
+            ...chat,
+            messages: [
+              ...chat.messages,
+              {
+                role: "assistant",
+                content: "❌ Sorry, something went wrong.",
+              },
+            ],
+          }
+        : chat
+    )
+  );
+}
   }
 
   return (
     <main className="flex h-screen bg-black text-white">
-      <Sidebar onNewChat={handleNewChat} />
+      <Sidebar
+       chats={chats}
+       currentChatId={currentChatId}
+       onSelectChat={setCurrentChatId}
+       onNewChat={handleNewChat}
+      />
 
       <div className="flex flex-1 flex-col">
         <ChatWindow
-          messages={messages}
-          loading={loading}
-        />
+        messages={
+        chats.find((chat) => chat.id === currentChatId)?.messages ??
+        [welcomeMessage]
+        }
+        loading={loading}
+       />
 
         <ChatInput
           value={message}
