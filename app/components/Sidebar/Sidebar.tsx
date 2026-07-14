@@ -7,6 +7,7 @@ import {
   MessageSquare,
   GraduationCap,
   User,
+  Trash2,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -17,6 +18,7 @@ type SidebarProps = {
   currentChatId: string;
   onSelectChat: (id: string) => void;
   onNewChat: () => void;
+  onDeleteChat: (id: string) => void;
 };
 
 export default function Sidebar({

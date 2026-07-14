@@ -1,4 +1,5 @@
 "use client";
+import { motion } from "framer-motion";
 
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar/Sidebar";
@@ -92,15 +93,19 @@ const [currentChatId, setCurrentChatId] = useState("current");
     ];
 
     setChats((prev) =>
-     prev.map((chat) =>
-       chat.id === currentChatId
-         ? {
-           ...chat,
-           messages: updatedMessages,
-           }
-         : chat
-        )
-       );
+  prev.map((chat) => {
+    if (chat.id !== currentChatId) return chat;
+
+    return {
+      ...chat,
+      title:
+        chat.messages.length === 0
+          ? userMessage.content.slice(0, 30)
+          : chat.title,
+      messages: updatedMessages,
+    };
+  })
+);
     setMessage("");
     setLoading(true);
 
@@ -204,13 +209,19 @@ await new Promise((resolve) =>
   }
 
   return (
-    <main className="flex h-screen bg-black text-white">
+    <motion.main
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ duration: 0.5 }}
+  className="flex h-screen bg-black text-white"
+>
       <Sidebar
-       chats={chats}
-       currentChatId={currentChatId}
-       onSelectChat={setCurrentChatId}
-       onNewChat={handleNewChat}
-      />
+  chats={chats}
+  currentChatId={currentChatId}
+  onSelectChat={setCurrentChatId}
+  onNewChat={handleNewChat}
+  onDeleteChat={() => {}}
+/>
 
       <div className="flex flex-1 flex-col">
         <ChatWindow
@@ -228,6 +239,6 @@ await new Promise((resolve) =>
           loading={loading}
         />
       </div>
-    </main>
+    </motion.main>
   );
 }

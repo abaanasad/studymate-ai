@@ -1,5 +1,31 @@
-import Link from "next/link";
+"use client";
+import IntroAnimation from "@/app/components/IntroAnimation";
+
+import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useRef, useState } from "react";
 export default function Home() {
+  const router = useRouter();
+const [opening, setOpening] = useState(false);
+const whooshRef = useRef<HTMLAudioElement | null>(null);
+
+function startChat() {
+  setOpening(true);
+  if (!whooshRef.current) {
+  whooshRef.current = new Audio("/sounds/whoosh.mp3");
+}
+
+setTimeout(() => {
+  if (whooshRef.current) {
+    whooshRef.current.currentTime = 0;
+    whooshRef.current.play().catch(() => {});
+  }
+}, 500);
+
+  setTimeout(() => {
+    router.push("/chat");
+  }, 3500);
+}
   return (
     <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white">
       <nav className="flex items-center justify-between px-8 py-6 border-b border-zinc-800">
@@ -21,11 +47,23 @@ export default function Home() {
         </p>
 
         <div className="mt-10 flex gap-4">
-          <Link href="/chat">
-  <button className="rounded-xl bg-blue-600 px-8 py-4 font-semibold hover:bg-blue-700 transition">
-    Start Chatting
-  </button>
-</Link>
+        <motion.button
+  onClick={startChat}
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  animate={
+    opening
+      ? {
+          scale: [1, 1.15, 1],
+          rotate: [0, -2, 2, 0],
+        }
+      : {}
+  }
+  transition={{ duration: 0.8 }}
+  className="rounded-xl bg-blue-600 px-8 py-4 font-semibold hover:bg-blue-700"
+>
+  Start Chatting
+</motion.button>
 
           <button className="rounded-xl border border-zinc-700 px-8 py-4 hover:bg-zinc-800 transition">
             Learn More
@@ -55,6 +93,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      {opening && <IntroAnimation />}
     </main>
   );
-}
+  }
