@@ -1,6 +1,6 @@
 "use client";
 import IntroAnimation from "@/app/components/IntroAnimation";
-
+import StarBackground from "./components/StarBackground";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useRef, useState } from "react";
@@ -27,7 +27,15 @@ setTimeout(() => {
   }, 3500);
 }
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black via-zinc-900 to-black text-white">
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <motion.div
+  animate={{ opacity: opening ? 0 : 1 }}
+  transition={{ duration: 0.4 }}
+  className="absolute inset-0"
+>
+  <StarBackground />
+</motion.div>
+      <div className="relative z-10">
       <nav className="flex items-center justify-between px-8 py-6 border-b border-zinc-800">
         <h1 className="text-2xl font-bold">StudyMate AI</h1>
 
@@ -93,7 +101,8 @@ setTimeout(() => {
           </p>
         </div>
       </section>
-      {opening && <IntroAnimation />}
+      <IntroAnimation visible={opening} />
+      </div>
     </main>
   );
   }
