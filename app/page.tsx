@@ -1,39 +1,50 @@
 "use client";
-import IntroAnimation from "@/app/components/IntroAnimation";
+
 import StarBackground from "./components/StarBackground";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 export default function Home() {
   const router = useRouter();
-const [opening, setOpening] = useState(false);
+const [warp, setWarp] = useState(false);
 const whooshRef = useRef<HTMLAudioElement | null>(null);
+useEffect(() => {
+  whooshRef.current = new Audio("/sounds/shootingstar.mp3"); // change extension if needed
+  whooshRef.current.preload = "auto";
+}, []);
 
 function startChat() {
-  setOpening(true);
-  if (!whooshRef.current) {
-  whooshRef.current = new Audio("/sounds/whoosh.mp3");
-}
-
-setTimeout(() => {
-  if (whooshRef.current) {
-    whooshRef.current.currentTime = 0;
-    whooshRef.current.play().catch(() => {});
-  }
-}, 500);
+  setWarp(true);
 
   setTimeout(() => {
+    setWarp(false);
+  }, 1200);
+
+  // Play sound immediately
+  if (!whooshRef.current) {
+    whooshRef.current = new Audio("/sounds/shootingstar.mp3"); // or .wav
+  }
+
+  whooshRef.current.currentTime = 0;
+  whooshRef.current.play().catch(console.error);
+
+  setTimeout(() => {
+    if (whooshRef.current) {
+      whooshRef.current.pause();
+      whooshRef.current.currentTime = 0;
+    }
+
     router.push("/chat");
-  }, 3500);
+  }, 2600);
 }
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <motion.div
-  animate={{ opacity: opening ? 0 : 1 }}
+  animate={{ opacity: 1 }}
   transition={{ duration: 0.4 }}
   className="absolute inset-0"
 >
-  <StarBackground />
+  <StarBackground warp={warp} />
 </motion.div>
       <div className="relative z-10">
       <nav className="flex items-center justify-between px-8 py-6 border-b border-zinc-800">
@@ -60,13 +71,12 @@ setTimeout(() => {
   whileHover={{ scale: 1.05 }}
   whileTap={{ scale: 0.95 }}
   animate={
-    opening
-      ? {
-          scale: [1, 1.15, 1],
-          rotate: [0, -2, 2, 0],
-        }
-      : {}
-  }
+  warp
+    ? {
+        scale: [1, 0.95, 1],
+      }
+    : {}
+}
   transition={{ duration: 0.8 }}
   className="rounded-xl bg-blue-600 px-8 py-4 font-semibold hover:bg-blue-700"
 >
@@ -101,7 +111,7 @@ setTimeout(() => {
           </p>
         </div>
       </section>
-      <IntroAnimation visible={opening} />
+      
       </div>
     </main>
   );
