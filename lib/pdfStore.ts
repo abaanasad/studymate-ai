@@ -1,9 +1,20 @@
-export let uploadedPdfText = "";
+export type StoredPdf = {
+  id: string;
+  fileName: string;
+  text: string;
+  uploadedAt: Date;
+};
 
-export function setUploadedPdfText(text: string) {
-  uploadedPdfText = text;
+const pdfStore = new Map<string, StoredPdf>();
+
+export function savePdf(pdf: StoredPdf) {
+  pdfStore.set(pdf.id, pdf);
 }
 
-export function getUploadedPdfText() {
-  return uploadedPdfText;
+export function getPdf(id: string) {
+  return pdfStore.get(id);
+}
+
+export function deletePdf(id: string) {
+  pdfStore.delete(id);
 }

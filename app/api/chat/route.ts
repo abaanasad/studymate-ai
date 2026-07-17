@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest } from "next/server";
+import { getPdf } from "@/lib/pdfStore";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY!,
@@ -12,7 +13,7 @@ type ChatMessage = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json();
+    const { messages, pdfId } = await req.json();
 
     const conversation = (messages as ChatMessage[])
       .map(
@@ -20,17 +21,33 @@ export async function POST(req: NextRequest) {
           `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`
       )
       .join("\n\n");
+      const pdf = pdfId ? getPdf(pdfId) : null;
+      console.log("PDF ID received:", pdfId);
+console.log("PDF found:", !!pdf);
+
+if (pdf) {
+  console.log("PDF text length:", pdf.text.length);
+}
 
     const prompt = `
 You are StudyMate AI.
 
 Rules:
-- Never introduce yourself unless the user asks.
-- Assume the welcome message has already been shown.
-- Remember previous messages.
-- Answer directly.
-- Keep answers short unless the user asks for more detail.
+- Never introduce yourself unless asked.
+- If a PDF is provided, answer ONLY using the PDF whenever possible.
+- If the answer isn't in the PDF, clearly say so.
+- Keep answers concise.
 - Use Markdown when helpful.
+
+${
+  pdf
+    ? `PDF CONTENT:
+
+${pdf.text}
+
+--------------------------------`
+    : ""
+}
 
 Conversation:
 

@@ -1,5 +1,5 @@
 "use client";
-
+import type { PdfDocumentInfo } from "../chat/pdfTypes";
 import { useRef, useState } from "react";
 
 type ChatInputProps = {
@@ -7,6 +7,8 @@ type ChatInputProps = {
   onChange: (value: string) => void;
   onSend: () => void;
   loading: boolean;
+
+  onPdfUploaded: (document: PdfDocumentInfo) => void;
 };
 
 export default function ChatInput({
@@ -14,6 +16,7 @@ export default function ChatInput({
   onChange,
   onSend,
   loading,
+  onPdfUploaded,
 }: ChatInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,12 +39,17 @@ export default function ChatInput({
       });
 
       const data = await res.json();
+      console.log(data);
 
       if (data.success) {
-        setFileName(data.fileName);
-      } else {
-        alert(data.message);
-      }
+  console.log("Uploaded document:", data.document);
+
+  setFileName(data.document.fileName);
+
+  onPdfUploaded(data.document);
+} else {
+  alert(data.message);
+}
     } catch {
       alert("Upload failed.");
     }

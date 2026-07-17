@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
+import type { PdfDocumentInfo } from "./pdfTypes";
 
 import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar/Sidebar";
@@ -26,6 +27,8 @@ const [currentChatId, setCurrentChatId] = useState("current");
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pdfDocument, setPdfDocument] =
+  useState<PdfDocumentInfo | null>(null);
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
   const savedChats = localStorage.getItem("studymate-chats");
@@ -117,8 +120,9 @@ const [currentChatId, setCurrentChatId] = useState("current");
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: updatedMessages,
-        }),
+  messages: updatedMessages,
+  pdfId: pdfDocument?.id,
+}),
       });
       console.log("Response status:", res.status);
 
@@ -233,11 +237,12 @@ await new Promise((resolve) =>
        />
 
         <ChatInput
-          value={message}
-          onChange={setMessage}
-          onSend={sendMessage}
-          loading={loading}
-        />
+    value={message}
+    onChange={setMessage}
+    onSend={sendMessage}
+    loading={loading}
+    onPdfUploaded={setPdfDocument}
+/>
       </div>
     </motion.main>
   );
